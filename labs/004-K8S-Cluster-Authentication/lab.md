@@ -9,14 +9,15 @@ First, we delete any dangling clusters and create a new one using the `extra-con
 ```
 export MINIKUBE_HOME=~/Desktop/lab-tools/.kube
 minikube delete
-minikube start --extra-config=apiserver.Authorization.Mode=RBAC --extra-config=apiserver.Authentication.PasswordFile.BasicAuthFile=/path/to/Defending-DevOps/labs/004-K8S-Cluster-Authentication/creds.csv
+export DEFENDING_DEVOPS_DIR=/path/to/Defending-DevOps
+minikube start --extra-config=apiserver.Authorization.Mode=RBAC --extra-config=apiserver.Authentication.PasswordFile.BasicAuthFile=$DEFENDING_DEVOPS_DIR/labs/004-K8S-Cluster-Authentication/creds.csv
 ```
 
 2. We have been using `kubectl` for these labs so far, but the Kubernetes API is also accessible using standard REST endpoints on port 8443. If we try to `curl` our API endpoint we will be denied because RBAC is enabled and we did not pass our credentials to the API:
 ```
 export MINIKUBE_HOME=~/Desktop/lab-tools/.kube
 minikube ip
-curl https://<minikubeIP>:8443/ -k
+curl https://$(minikube ip):8443/ -k
 # DENIED
 ```
 
@@ -29,7 +30,7 @@ kubectl create -f .
 ```
 echo -n jboss:supertopsecretpassword | base64
 # Use this base64 encoded value in our Basic HTTP header below
-curl -H "Authorization: Basic amJvc3M6c3VwZXJ0b3BzZWNyZXRwYXNzd29yZA==" https://minikubeIP:8443/api/v1/namespaces/development/secrets -k
+curl -H "Authorization: Basic amJvc3M6c3VwZXJ0b3BzZWNyZXRwYXNzd29yZA==" https://$(minikube ip):8443/api/v1/namespaces/development/secrets -k
 ```
 
 5. Access should be denied for our user jboss. 
@@ -45,5 +46,5 @@ kubectl describe rolebinding read-secrets-development --namespace=development
 
 2. We can now try our `curl` command again and with any luck, jboss will be able to read the secrets in the development namespace:
 ```
-curl -H "Authorization: Basic amJvc3M6c3VwZXJ0b3BzZWNyZXRwYXNzd29yZA==" https://minikubeIP:8443/api/v1/namespaces/development/secrets -k
+curl -H "Authorization: Basic amJvc3M6c3VwZXJ0b3BzZWNyZXRwYXNzd29yZA==" https://$(minikube ip):8443/api/v1/namespaces/development/secrets -k
 ```
