@@ -9,14 +9,15 @@ First, we delete any dangling clusters and create a new one using the `extra-con
 ```
 export MINIKUBE_HOME=~/Desktop/lab-tools/.kube
 minikube delete
-minikube start --extra-config=apiserver.Authorization.Mode=RBAC --extra-config=apiserver.Authentication.PasswordFile.BasicAuthFile=/path/to/Defending-DevOps/labs/004-K8S-Cluster-Authentication/creds.csv
+export DEFENDING_DEVOPS_DIR=/path/to/Defending-DevOps
+minikube start --extra-config=apiserver.Authorization.Mode=RBAC --extra-config=apiserver.Authentication.PasswordFile.BasicAuthFile=$DEFENDING_DEVOPS_DIR/labs/004-K8S-Cluster-Authentication/creds.csv
 ```
 
 2. We have been using `kubectl` for these labs so far, but the Kubernetes API is also accessible using standard REST endpoints on port 8443. If we try to `curl` our API endpoint we will be denied because RBAC is enabled and we did not pass our credentials to the API:
 ```
 export MINIKUBE_HOME=~/Desktop/lab-tools/.kube
 minikube ip
-curl https://<minikubeIP>:8443/ -k
+curl https://$(minikube ip):8443/ -k
 # DENIED
 ```
 
